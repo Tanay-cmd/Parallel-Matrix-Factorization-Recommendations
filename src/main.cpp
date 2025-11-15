@@ -44,6 +44,8 @@ int main(int argc, char** argv)
         print_config(cfg);
 
         MFModel model = run_training_omp(ratings_path, cfg);
+        save_model(model, "outputs/trained_model_omp.bin");
+        cerr << "[MAIN] Model saved to outputs/trained_model.bin\n";
 
         if (model.n_users > 0) {
             std::uint32_t demo_user = 0;
@@ -69,6 +71,8 @@ int main(int argc, char** argv)
         }
 
         MFModel model = run_training_mpi(ratings_path, cfg);
+        save_model(model, "outputs/trained_model_mpi.bin");
+        cerr << "[MAIN] Model saved to outputs/trained_model.bin\n";
 
         if (world_rank == 0) {
             if (model.n_users > 0) {
@@ -81,6 +85,19 @@ int main(int argc, char** argv)
         }
 
         MPI_Finalize();
+        return 0;
+    }
+    else if (mode == "infer") {
+        if (argc < 4) {
+            cerr << "Usage: ./parallel_mf infer <model_path> <user_id>\n";
+            return 1;
+        }
+
+        string model_path = argv[2];
+        uint32_t user_id = stoi(argv[3]);
+
+        MFModel model = load_model(model_path);
+        recommend_top_k_for_user(model, user_id, 10);
         return 0;
     }
     else {
